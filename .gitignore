@@ -1,0 +1,36 @@
+# --- Android Studio / IntelliJ ---
+.gradle
+/build
+!/build.gradle
+*.iml
+.idea/workspace.xml
+.idea/libraries
+.idea/modules.xml
+.idea/caches
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+local.properties
+
+# --- Log files ---
+*.log
+
+# --- External Device / OS files ---
+.DS_Store
+captures/
+.externalNativeBuild
+.cxx/
+
+# --- Kotlin / KSP ---
+/build/generated/ksp
+/build/generated/source/kapt
+
+# --- Secrets (CRITICAL) ---
+# This ignores the file where you should store your Google Client IDs or API Keys
+secrets.xml
+google-services.json
+*.jks
+*.keystore
+
+# --- Retrofit / Network ---
+# If you use proxy settings locally
+.proxy
