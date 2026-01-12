@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -70,10 +71,17 @@ class AuthViewModel @Inject constructor(
                         )
                     }
             } catch (e: Exception) {
-                Log.e("AuthViewModel", "Unexpected auth error", e)
-                _uiState.value = AuthUiState.Error(
-                    message = "Unexpected error: ${e.message ?: "unknown error"}"
-                )
+                if (e is GetCredentialCancellationException) {
+                    Log.d("AuthViewModel", "User cancelled the Google Sign-In")
+                    // Just reset to Idle so the button becomes clickable again
+                    // without showing a Toast
+                    _uiState.value = AuthUiState.Idle
+                } else {
+                    Log.e("AuthViewModel", "Unexpected auth error", e)
+                    _uiState.value = AuthUiState.Error(
+                        message = "Login failed: ${e.message ?: "unknown error"}"
+                    )
+                }
             }
         }
     }
