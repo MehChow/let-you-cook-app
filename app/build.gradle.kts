@@ -29,8 +29,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         val clientId = localProperties.getProperty("GOOGLE_WEB_CLIENT_ID") ?: ""
+        val baseUrl = localProperties.getProperty("BASE_URL") ?: ""
 
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$clientId\"")
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
 
     buildTypes {
@@ -74,6 +76,13 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.51.1")
     ksp("com.google.dagger:hilt-android-compiler:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    // DataStore
+    implementation("androidx.datastore:datastore-preferences:1.2.0")
+
+    // OkHttp
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

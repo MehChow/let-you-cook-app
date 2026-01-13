@@ -26,8 +26,13 @@ data class AuthResponse(
     @SerializedName("username")
     val username: String,
 
-    @SerializedName("avatarUrl")
-    val avatarUrl: String?
+    @SerializedName("avatar")
+    val avatar: String?
+)
+
+data class LogoutRequest(
+    @SerializedName("refreshToken")
+    val refreshToken: String
 )
 
 /**
