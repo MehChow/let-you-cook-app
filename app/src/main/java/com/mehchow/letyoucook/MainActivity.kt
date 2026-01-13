@@ -3,16 +3,10 @@ package com.mehchow.letyoucook
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,7 +19,6 @@ import com.mehchow.letyoucook.ui.theme.LetYouCookTheme
 import com.mehchow.letyoucook.ui.viewmodel.AuthState
 import com.mehchow.letyoucook.ui.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
 
 // telling Hilt to inject dependencies into MainActivity
 @AndroidEntryPoint
@@ -48,7 +41,6 @@ fun AppNavigation(
     val navController = rememberNavController()
 
     LaunchedEffect(authState) {
-        delay(5000L)
         when (val state = authState) {
             is AuthState.Authenticated -> {
                 navController.navigate(homeRoute(state.user.username)) {
