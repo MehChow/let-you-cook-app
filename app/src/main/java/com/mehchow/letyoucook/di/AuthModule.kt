@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder
 import com.mehchow.letyoucook.BuildConfig
 import com.mehchow.letyoucook.data.local.TokenManager
 import com.mehchow.letyoucook.data.remote.AuthApiService
+import com.mehchow.letyoucook.data.remote.AuthInterceptor
 import com.mehchow.letyoucook.data.repository.AuthRepository
 import com.mehchow.letyoucook.data.repository.AuthRepositoryImpl
 import dagger.Module
@@ -45,8 +46,11 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor
+    ): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(createLoggingInterceptor())
