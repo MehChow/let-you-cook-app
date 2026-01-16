@@ -37,6 +37,15 @@ class TokenManager @Inject constructor(
         }
     }
 
+    /**
+     * Update only the access token (used during token refresh).
+     */
+    suspend fun updateAccessToken(newAccessToken: String) {
+        dataStore.edit { prefs ->
+            prefs[ACCESS_TOKEN] = newAccessToken
+        }
+    }
+
     suspend fun clearAuthData() {
         dataStore.edit { it.clear() }
     }

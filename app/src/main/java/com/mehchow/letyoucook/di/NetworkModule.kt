@@ -22,6 +22,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
+    /**
+     * Provides AuthInterceptor for adding JWT tokens to requests.
+     * This is the single source for AuthInterceptor in the app.
+     */
     @Provides
     @Singleton
     fun provideAuthInterceptor(tokenManager: TokenManager): AuthInterceptor {

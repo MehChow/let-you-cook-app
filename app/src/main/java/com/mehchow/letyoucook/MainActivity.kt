@@ -17,6 +17,7 @@ import androidx.navigation.navArgument
 import com.mehchow.letyoucook.NavRoutes.homeRoute
 import com.mehchow.letyoucook.ui.screens.AuthScreen
 import com.mehchow.letyoucook.ui.screens.HomeScreen
+import com.mehchow.letyoucook.ui.screens.RecipeDetailScreen
 import com.mehchow.letyoucook.ui.screens.SplashScreen
 import com.mehchow.letyoucook.ui.theme.LetYouCookTheme
 import com.mehchow.letyoucook.ui.viewmodel.AuthState
@@ -98,16 +99,19 @@ fun AppNavigation(
             )
         }
 
-        // Recipe detail screen - placeholder for now
+        // Recipe detail screen
         composable(
             route = NavRoutes.RECIPE_DETAIL,
             arguments = listOf(
-                navArgument("recipeId") { type = NavType.StringType}
+                navArgument("recipeId") { type = NavType.LongType }
             )
-        ) { backStackEntry ->
-            val recipeId = backStackEntry.arguments?.getLong("recipeId") ?: 0L
-            // TODO: RecipeDetailScreen
-            Text("Recipe Detail: $recipeId")
+        ) {
+            RecipeDetailScreen(
+                onBackClick = { navController.popBackStack() },
+                onCreatorClick = { userId ->
+                    navController.navigate(NavRoutes.userProfileRoute(userId))
+                }
+            )
         }
 
         // Create recipe screen - placeholder for now
@@ -120,6 +124,18 @@ fun AppNavigation(
         composable(NavRoutes.PROFILE) {
             // TODO: ProfileScreen
             Text("Profile")
+        }
+
+        // User profile screen (viewing other users) - placeholder for now
+        composable(
+            route = NavRoutes.USER_PROFILE,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
+            // TODO: UserProfileScreen
+            Text("User Profile: $userId")
         }
     }
 }

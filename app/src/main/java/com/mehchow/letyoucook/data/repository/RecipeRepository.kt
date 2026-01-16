@@ -125,12 +125,16 @@ class RecipeRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Convert PageResponse (VIA_DTO format) to PaginatedRecipes.
+     * Pagination metadata is now nested inside the 'page' object.
+     */
     private fun PageResponse<RecipeCard>.toPaginatedRecipes(): PaginatedRecipes {
         return PaginatedRecipes(
             recipes = this.content,
-            isLastPage = this.last,
-            totalPages = this.totalPages,
-            currentPage = this.number
+            isLastPage = this.page.isLastPage,
+            totalPages = this.page.totalPages,
+            currentPage = this.page.number
         )
     }
 

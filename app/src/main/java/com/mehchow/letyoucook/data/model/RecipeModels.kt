@@ -212,28 +212,43 @@ data class LikedResponse(
 )
 
 // ==================== PAGINATION WRAPPER ====================
+
+/**
+ * Wrapper for Spring Data Page responses using VIA_DTO serialization mode.
+ * 
+ * The VIA_DTO mode produces a stable JSON structure:
+ * {
+ *   "content": [...],
+ *   "page": { "size": 20, "number": 0, "totalElements": 100, "totalPages": 5 }
+ * }
+ */
 data class PageResponse<T>(
     @SerializedName("content")
     val content: List<T>,
+
+    @SerializedName("page")
+    val page: PageMetadata
+)
+
+/**
+ * Pagination metadata nested inside PageResponse.
+ */
+data class PageMetadata(
+    @SerializedName("size")
+    val size: Int,
+
+    @SerializedName("number")
+    val number: Int,  // Current page number (0-based)
 
     @SerializedName("totalElements")
     val totalElements: Long,
 
     @SerializedName("totalPages")
-    val totalPages: Int,
-
-    @SerializedName("number")
-    val number: Int,  // Current page number (0-based)
-
-    @SerializedName("size")
-    val size: Int,
-
-    @SerializedName("first")
-    val first: Boolean,
-
-    @SerializedName("last")
-    val last: Boolean,
-
-    @SerializedName("empty")
-    val empty: Boolean
-)
+    val totalPages: Int
+) {
+    /**
+     * Helper to check if this is the last page.
+     */
+    val isLastPage: Boolean
+        get() = number >= totalPages - 1
+}

@@ -6,6 +6,7 @@ import com.mehchow.letyoucook.BuildConfig
 import com.mehchow.letyoucook.data.local.TokenManager
 import com.mehchow.letyoucook.data.remote.AuthApiService
 import com.mehchow.letyoucook.data.remote.AuthInterceptor
+import com.mehchow.letyoucook.data.remote.TokenAuthenticator
 import com.mehchow.letyoucook.data.repository.AuthRepository
 import com.mehchow.letyoucook.data.repository.AuthRepositoryImpl
 import dagger.Module
@@ -17,6 +18,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Named
+import javax.inject.Provider
 import javax.inject.Singleton
 
 @Module
@@ -44,13 +46,29 @@ object AuthModule {
             .build()
     }
 
+    /**
+     * Provides TokenAuthenticator for handling 401 responses.
+     * Uses Provider<AuthApiService> to break the circular dependency:
+     * OkHttpClient -> TokenAuthenticator -> AuthApiService -> Retrofit -> OkHttpClient
+     */
+    @Provides
+    @Singleton
+    fun provideTokenAuthenticator(
+        tokenManager: TokenManager,
+        authApiServiceProvider: Provider<AuthApiService>
+    ): TokenAuthenticator {
+        return TokenAuthenticator(tokenManager, authApiServiceProvider)
+    }
+
     @Provides
     @Singleton
     fun provideOkHttpClient(
-        authInterceptor: AuthInterceptor
+        authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor(authInterceptor)
+            .addInterceptor(authInterceptor)  // Adds token to requests
+            .authenticator(tokenAuthenticator) // Handles 401 responses
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(createLoggingInterceptor())

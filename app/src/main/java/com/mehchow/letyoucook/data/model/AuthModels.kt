@@ -36,6 +36,22 @@ data class LogoutRequest(
 )
 
 /**
+ * Request object sent to /api/auth/refresh
+ */
+data class RefreshRequest(
+    @SerializedName("refreshToken")
+    val refreshToken: String
+)
+
+/**
+ * Response from /api/auth/refresh
+ */
+data class RefreshResponse(
+    @SerializedName("accessToken")
+    val accessToken: String
+)
+
+/**
  * Generic error response to match your GlobalExceptionHandler
  */
 data class ErrorResponse(
