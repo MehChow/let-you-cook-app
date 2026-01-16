@@ -2,6 +2,7 @@ package com.mehchow.letyoucook.data.remote
 
 import com.mehchow.letyoucook.data.model.CreateRecipeRequest
 import com.mehchow.letyoucook.data.model.LikedResponse
+import com.mehchow.letyoucook.data.model.PageResponse
 import com.mehchow.letyoucook.data.model.RecipeCard
 import com.mehchow.letyoucook.data.model.RecipeDetail
 import com.mehchow.letyoucook.data.model.UpdateRecipeRequest
@@ -21,14 +22,14 @@ interface RecipeApiService {
     suspend fun getPublicRecipes(
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20,
-    ): List<RecipeCard>
+    ): PageResponse<RecipeCard>
 
     // ==================== MY RECIPES ====================
     @GET("api/recipes/my")
     suspend fun getMyRecipes(
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20,
-    ): List<RecipeCard>
+    ): PageResponse<RecipeCard>
 
     // ==================== USER'S PUBLIC RECIPES ====================
     @GET("api/recipes/user/{userId}")
@@ -36,7 +37,7 @@ interface RecipeApiService {
         @Path("userId") userId: Long,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20,
-    ): List<RecipeCard>
+    ): PageResponse<RecipeCard>
 
     // ==================== SINGLE RECIPE ====================
     @GET("api/recipes/{id}")

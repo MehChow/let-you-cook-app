@@ -3,14 +3,17 @@ package com.mehchow.letyoucook
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.mehchow.letyoucook.NavRoutes.homeRoute
 import com.mehchow.letyoucook.ui.screens.AuthScreen
 import com.mehchow.letyoucook.ui.screens.HomeScreen
@@ -74,9 +77,49 @@ fun AppNavigation(
             })
         }
 
-        composable(NavRoutes.HOME_WITH_USERNAME) { backStackEntry ->
+        composable(
+            NavRoutes.HOME_WITH_USERNAME,
+            arguments = listOf(
+                navArgument("username") { type = NavType.StringType}
+            )
+        ) { backStackEntry ->
             val username = backStackEntry.arguments?.getString("username") ?: "User"
-            HomeScreen(username = username)
+            HomeScreen(
+                username = username,
+                onRecipeClick = { recipeId ->
+                    navController.navigate(NavRoutes.recipeDetailRoute(recipeId))
+                },
+                onCreateRecipeClick = {
+                    navController.navigate(NavRoutes.CREATE_RECIPE)
+                },
+                onProfileClick = {
+                    navController.navigate(NavRoutes.PROFILE)
+                }
+            )
+        }
+
+        // Recipe detail screen - placeholder for now
+        composable(
+            route = NavRoutes.RECIPE_DETAIL,
+            arguments = listOf(
+                navArgument("recipeId") { type = NavType.StringType}
+            )
+        ) { backStackEntry ->
+            val recipeId = backStackEntry.arguments?.getLong("recipeId") ?: 0L
+            // TODO: RecipeDetailScreen
+            Text("Recipe Detail: $recipeId")
+        }
+
+        // Create recipe screen - placeholder for now
+        composable(NavRoutes.CREATE_RECIPE) {
+            // TODO: CreateRecipeScreen
+            Text("Create Recipe")
+        }
+
+        // Profile screen - placeholder for now
+        composable(NavRoutes.PROFILE) {
+            // TODO: ProfileScreen
+            Text("Profile")
         }
     }
 }

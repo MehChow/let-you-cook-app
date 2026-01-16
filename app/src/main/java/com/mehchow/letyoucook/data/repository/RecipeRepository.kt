@@ -1,6 +1,7 @@
 package com.mehchow.letyoucook.data.repository
 
 import com.mehchow.letyoucook.data.model.CreateRecipeRequest
+import com.mehchow.letyoucook.data.model.PageResponse
 import com.mehchow.letyoucook.data.model.RecipeCard
 import com.mehchow.letyoucook.data.model.RecipeDetail
 import com.mehchow.letyoucook.data.model.UpdateRecipeRequest
@@ -16,10 +17,17 @@ sealed class RecipeResult<out T> {
     data class Error(val message: String, val code: Int? = null): RecipeResult<Nothing>()
 }
 
+data class PaginatedRecipes(
+    val recipes: List<RecipeCard>,
+    val isLastPage: Boolean,
+    val totalPages: Int,
+    val currentPage: Int
+)
+
 interface RecipeRepository {
-    suspend fun getPublicRecipes(page: Int, size: Int): RecipeResult<List<RecipeCard>>
-    suspend fun getMyRecipes(page: Int, size: Int): RecipeResult<List<RecipeCard>>
-    suspend fun getUserPublicRecipes(userId: Long, page: Int, size: Int): RecipeResult<List<RecipeCard>>
+    suspend fun getPublicRecipes(page: Int, size: Int): RecipeResult<PaginatedRecipes>
+    suspend fun getMyRecipes(page: Int, size: Int): RecipeResult<PaginatedRecipes>
+    suspend fun getUserPublicRecipes(userId: Long, page: Int, size: Int): RecipeResult<PaginatedRecipes>
     suspend fun getRecipeDetail(id: Long): RecipeResult<RecipeDetail>
     suspend fun createRecipe(request: CreateRecipeRequest): RecipeResult<RecipeDetail>
     suspend fun updateRecipe(id: Long, request: UpdateRecipeRequest): RecipeResult<RecipeDetail>
@@ -33,15 +41,17 @@ interface RecipeRepository {
 class RecipeRepositoryImpl @Inject constructor(
     private val recipeApiService: RecipeApiService
 ) : RecipeRepository {
-    override suspend fun getPublicRecipes(page: Int, size: Int): RecipeResult<List<RecipeCard>> {
+    override suspend fun getPublicRecipes(page: Int, size: Int): RecipeResult<PaginatedRecipes> {
         return safeApiCall {
-            recipeApiService.getPublicRecipes(page, size)
+            val response = recipeApiService.getPublicRecipes(page, size)
+            response.toPaginatedRecipes()
         }
     }
 
-    override suspend fun getMyRecipes(page: Int, size: Int): RecipeResult<List<RecipeCard>> {
+    override suspend fun getMyRecipes(page: Int, size: Int): RecipeResult<PaginatedRecipes> {
         return safeApiCall {
-            recipeApiService.getMyRecipes(page, size)
+            val response = recipeApiService.getMyRecipes(page, size)
+            response.toPaginatedRecipes()
         }
     }
 
@@ -49,9 +59,10 @@ class RecipeRepositoryImpl @Inject constructor(
         userId: Long,
         page: Int,
         size: Int
-    ): RecipeResult<List<RecipeCard>> {
+    ): RecipeResult<PaginatedRecipes> {
         return safeApiCall {
-            recipeApiService.getUserPublicRecipes(userId, page, size)
+            val response = recipeApiService.getUserPublicRecipes(userId, page, size)
+            response.toPaginatedRecipes()
         }
     }
 
@@ -112,6 +123,15 @@ class RecipeRepositoryImpl @Inject constructor(
         return safeApiCall {
             recipeApiService.isRecipeLiked(id).liked
         }
+    }
+
+    private fun PageResponse<RecipeCard>.toPaginatedRecipes(): PaginatedRecipes {
+        return PaginatedRecipes(
+            recipes = this.content,
+            isLastPage = this.last,
+            totalPages = this.totalPages,
+            currentPage = this.number
+        )
     }
 
     private suspend fun <T> safeApiCall(block: suspend () -> T): RecipeResult<T> {

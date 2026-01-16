@@ -210,3 +210,30 @@ data class LikedResponse(
     @SerializedName("liked")
     val liked: Boolean,
 )
+
+// ==================== PAGINATION WRAPPER ====================
+data class PageResponse<T>(
+    @SerializedName("content")
+    val content: List<T>,
+
+    @SerializedName("totalElements")
+    val totalElements: Long,
+
+    @SerializedName("totalPages")
+    val totalPages: Int,
+
+    @SerializedName("number")
+    val number: Int,  // Current page number (0-based)
+
+    @SerializedName("size")
+    val size: Int,
+
+    @SerializedName("first")
+    val first: Boolean,
+
+    @SerializedName("last")
+    val last: Boolean,
+
+    @SerializedName("empty")
+    val empty: Boolean
+)

@@ -36,8 +36,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideUploadApiService(retrofit: Retrofit): RecipeApiService {
-        return retrofit.create(RecipeApiService::class.java)
+    fun provideUploadApiService(retrofit: Retrofit): UploadApiService {
+        return retrofit.create(UploadApiService::class.java)
     }
 
     @Provides
