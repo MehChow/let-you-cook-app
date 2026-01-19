@@ -16,6 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mehchow.letyoucook.ui.screens.AuthScreen
 import com.mehchow.letyoucook.ui.screens.CreateRecipeScreen
+import com.mehchow.letyoucook.ui.screens.EditRecipeScreen
 import com.mehchow.letyoucook.ui.screens.MainScreen
 import com.mehchow.letyoucook.ui.screens.RecipeDetailScreen
 import com.mehchow.letyoucook.ui.screens.SplashScreen
@@ -80,8 +81,10 @@ fun AppNavigation(
 
         // Main screen with bottom navigation (Home, Explore, Notification, Profile)
         composable(NavRoutes.MAIN) { backStackEntry ->
-            // Observe the savedStateHandle for recipe_created result
+            // Observe the savedStateHandle for recipe changes (created, edited, or deleted)
             val recipeCreated = backStackEntry.savedStateHandle.get<Boolean>("recipe_created") ?: false
+            val recipeModified = backStackEntry.savedStateHandle.get<Boolean>("recipe_modified") ?: false
+            val shouldRefresh = recipeCreated || recipeModified
             
             MainScreen(
                 onRecipeClick = { recipeId ->
@@ -93,10 +96,11 @@ fun AppNavigation(
                 onUserProfileClick = { userId ->
                     navController.navigate(NavRoutes.userProfileRoute(userId))
                 },
-                shouldRefreshHome = recipeCreated,
+                shouldRefreshHome = shouldRefresh,
                 onRefreshConsumed = {
-                    // Clear the flag after consuming
+                    // Clear all flags after consuming
                     backStackEntry.savedStateHandle.remove<Boolean>("recipe_created")
+                    backStackEntry.savedStateHandle.remove<Boolean>("recipe_modified")
                 }
             )
         }
@@ -107,11 +111,27 @@ fun AppNavigation(
             arguments = listOf(
                 navArgument("recipeId") { type = NavType.LongType }
             )
-        ) {
+        ) { backStackEntry ->
+            // Check if recipe was edited and needs refresh
+            val recipeEdited = backStackEntry.savedStateHandle.get<Boolean>("recipe_edited") ?: false
+            
             RecipeDetailScreen(
                 onBackClick = { navController.popBackStack() },
                 onCreatorClick = { userId ->
                     navController.navigate(NavRoutes.userProfileRoute(userId))
+                },
+                onEditClick = { recipeId ->
+                    navController.navigate(NavRoutes.editRecipeRoute(recipeId))
+                },
+                onDeleteSuccess = {
+                    // Set flag to refresh home screen and navigate back
+                    navController.previousBackStackEntry?.savedStateHandle?.set("recipe_modified", true)
+                    navController.popBackStack()
+                },
+                recipeEdited = recipeEdited,
+                onRecipeEdited = {
+                    // Clear the flag after consuming
+                    backStackEntry.savedStateHandle.remove<Boolean>("recipe_edited")
                 }
             )
         }
@@ -123,6 +143,25 @@ fun AppNavigation(
                 onSuccess = {
                     // Set result to trigger refresh on MainScreen
                     navController.previousBackStackEntry?.savedStateHandle?.set("recipe_created", true)
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // Edit recipe screen
+        composable(
+            route = NavRoutes.EDIT_RECIPE,
+            arguments = listOf(
+                navArgument("recipeId") { type = NavType.LongType }
+            )
+        ) {
+            EditRecipeScreen(
+                onBackClick = { navController.popBackStack() },
+                onSuccess = {
+                    // Set flags to refresh both detail screen and home
+                    navController.previousBackStackEntry?.savedStateHandle?.set("recipe_edited", true)
+                    // Also notify MainScreen via the detail screen's back stack entry
+                    navController.getBackStackEntry(NavRoutes.MAIN).savedStateHandle.set("recipe_modified", true)
                     navController.popBackStack()
                 }
             )

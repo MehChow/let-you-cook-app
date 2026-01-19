@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mehchow.letyoucook.data.repository.RecipeRepository
 import com.mehchow.letyoucook.data.repository.RecipeResult
+import com.mehchow.letyoucook.data.repository.UserRepository
+import com.mehchow.letyoucook.data.repository.UserResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,18 +19,27 @@ import javax.inject.Inject
  *
  * @param savedStateHandle Provides access to navigation arguments (recipeId)
  * @param recipeRepository Repository for recipe operations
+ * @param userRepository Repository for user operations
  */
 @HiltViewModel
 class RecipeDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val recipeRepository: RecipeRepository
+    private val recipeRepository: RecipeRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     // Get recipeId from navigation arguments
     private val recipeId: Long = savedStateHandle.get<Long>("recipeId") ?: 0L
+    
+    // Cache current user ID
+    private var currentUserId: Long? = null
 
     private val _uiState = MutableStateFlow<RecipeDetailUiState>(RecipeDetailUiState.Loading)
     val uiState: StateFlow<RecipeDetailUiState> = _uiState.asStateFlow()
+    
+    // Event for navigation after delete
+    private val _deleteSuccess = MutableStateFlow(false)
+    val deleteSuccess: StateFlow<Boolean> = _deleteSuccess.asStateFlow()
 
     init {
         loadRecipeDetail()
@@ -40,10 +51,21 @@ class RecipeDetailViewModel @Inject constructor(
     fun loadRecipeDetail() {
         viewModelScope.launch {
             _uiState.value = RecipeDetailUiState.Loading
+            
+            // Fetch current user if not cached
+            if (currentUserId == null) {
+                when (val userResult = userRepository.getCurrentUserProfile()) {
+                    is UserResult.Success -> currentUserId = userResult.data.id
+                    is UserResult.Error -> { /* Continue without user ID */ }
+                }
+            }
 
             when (val result = recipeRepository.getRecipeDetail(recipeId)) {
                 is RecipeResult.Success -> {
-                    _uiState.value = RecipeDetailUiState.Success(recipe = result.data)
+                    _uiState.value = RecipeDetailUiState.Success(
+                        recipe = result.data,
+                        currentUserId = currentUserId
+                    )
                 }
                 is RecipeResult.Error -> {
                     _uiState.value = RecipeDetailUiState.Error(result.message)
@@ -98,5 +120,58 @@ class RecipeDetailViewModel @Inject constructor(
                 }
             }
         }
+    }
+    
+    /**
+     * Show delete confirmation dialog.
+     */
+    fun showDeleteDialog() {
+        val currentState = _uiState.value
+        if (currentState is RecipeDetailUiState.Success) {
+            _uiState.value = currentState.copy(showDeleteDialog = true)
+        }
+    }
+    
+    /**
+     * Hide delete confirmation dialog.
+     */
+    fun hideDeleteDialog() {
+        val currentState = _uiState.value
+        if (currentState is RecipeDetailUiState.Success) {
+            _uiState.value = currentState.copy(showDeleteDialog = false)
+        }
+    }
+    
+    /**
+     * Delete the recipe.
+     */
+    fun deleteRecipe() {
+        val currentState = _uiState.value
+        if (currentState !is RecipeDetailUiState.Success) return
+        if (currentState.isDeleting) return
+        
+        viewModelScope.launch {
+            _uiState.value = currentState.copy(isDeleting = true, showDeleteDialog = false)
+            
+            when (val result = recipeRepository.deleteRecipe(recipeId)) {
+                is RecipeResult.Success -> {
+                    _deleteSuccess.value = true
+                }
+                is RecipeResult.Error -> {
+                    _uiState.value = currentState.copy(
+                        isDeleting = false,
+                        showDeleteDialog = false
+                    )
+                    // Could add error handling here
+                }
+            }
+        }
+    }
+    
+    /**
+     * Reset delete success flag after navigation.
+     */
+    fun resetDeleteSuccess() {
+        _deleteSuccess.value = false
     }
 }
