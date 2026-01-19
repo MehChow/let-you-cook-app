@@ -1,5 +1,6 @@
 package com.mehchow.letyoucook.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mehchow.letyoucook.ui.components.RecipeCardItem
+import com.mehchow.letyoucook.ui.theme.color_primary
 import com.mehchow.letyoucook.ui.viewmodel.HomeUiState
 import com.mehchow.letyoucook.ui.viewmodel.HomeViewModel
 
@@ -91,6 +93,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .background(color = color_primary)
         ) {
             when (val state = uiState) {
                 is HomeUiState.Loading -> {

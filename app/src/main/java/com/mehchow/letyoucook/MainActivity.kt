@@ -17,6 +17,7 @@ import androidx.navigation.navArgument
 import com.mehchow.letyoucook.NavRoutes.homeRoute
 import com.mehchow.letyoucook.ui.screens.AuthScreen
 import com.mehchow.letyoucook.ui.screens.HomeScreen
+import com.mehchow.letyoucook.ui.screens.ProfileScreen
 import com.mehchow.letyoucook.ui.screens.RecipeDetailScreen
 import com.mehchow.letyoucook.ui.screens.SplashScreen
 import com.mehchow.letyoucook.ui.theme.LetYouCookTheme
@@ -81,7 +82,7 @@ fun AppNavigation(
         composable(
             NavRoutes.HOME_WITH_USERNAME,
             arguments = listOf(
-                navArgument("username") { type = NavType.StringType}
+                navArgument("username") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val username = backStackEntry.arguments?.getString("username") ?: "User"
@@ -122,8 +123,12 @@ fun AppNavigation(
 
         // Profile screen - placeholder for now
         composable(NavRoutes.PROFILE) {
-            // TODO: ProfileScreen
-            Text("Profile")
+            ProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onRecipeClick = { recipeId ->
+                    navController.navigate(NavRoutes.recipeDetailRoute(recipeId))
+                }
+            )
         }
 
         // User profile screen (viewing other users) - placeholder for now

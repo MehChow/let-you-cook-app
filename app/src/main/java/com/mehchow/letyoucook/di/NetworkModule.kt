@@ -5,10 +5,13 @@ import com.mehchow.letyoucook.data.local.TokenManager
 import com.mehchow.letyoucook.data.remote.AuthInterceptor
 import com.mehchow.letyoucook.data.remote.RecipeApiService
 import com.mehchow.letyoucook.data.remote.UploadApiService
+import com.mehchow.letyoucook.data.remote.UserApiService
 import com.mehchow.letyoucook.data.repository.RecipeRepository
 import com.mehchow.letyoucook.data.repository.RecipeRepositoryImpl
 import com.mehchow.letyoucook.data.repository.UploadRepository
 import com.mehchow.letyoucook.data.repository.UploadRepositoryImpl
+import com.mehchow.letyoucook.data.repository.UserRepository
+import com.mehchow.letyoucook.data.repository.UserRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -60,5 +63,19 @@ object NetworkModule {
         @ApplicationContext context: Context
     ): UploadRepository {
         return UploadRepositoryImpl(uploadApiService, okHttpClient, context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserApiService(retrofit: Retrofit): UserApiService {
+        return retrofit.create(UserApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        userApiService: UserApiService
+    ): UserRepository {
+        return UserRepositoryImpl(userApiService)
     }
 }

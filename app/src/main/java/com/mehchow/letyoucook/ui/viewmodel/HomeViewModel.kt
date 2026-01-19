@@ -5,7 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.mehchow.letyoucook.data.model.RecipeCard
 import com.mehchow.letyoucook.data.repository.AuthRepository
 import com.mehchow.letyoucook.data.repository.RecipeRepository
-import com.mehchow.letyoucook.data.repository.RecipeResult
+import com.mehchow.letyoucook.util.PaginationManager
+import com.mehchow.letyoucook.util.PaginationResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,10 +23,10 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    private var currentPage = 0
-    private val pageSize = 20
-    private var allRecipes = mutableListOf<RecipeCard>()
-    private var isLastPage = false
+    private val paginationManager = PaginationManager<RecipeCard>(
+        pageSize = 20,
+        fetchPage = { page, size -> recipeRepository.getPublicRecipes(page, size) }
+    )
 
     init {
         loadRecipes()
@@ -34,26 +35,20 @@ class HomeViewModel @Inject constructor(
     fun loadRecipes() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
-            currentPage = 0
-            allRecipes.clear()
 
-            when (val result = recipeRepository.getPublicRecipes(currentPage, pageSize)) {
-                is RecipeResult.Success -> {
-                    val paginatedData = result.data
-                    allRecipes.addAll(paginatedData.recipes)
-                    isLastPage = paginatedData.isLastPage
-
-                    _uiState.value = if (paginatedData.recipes.isEmpty()) {
+            when (val result = paginationManager.loadFirstPage { it.recipes }) {
+                is PaginationResult.Success -> {
+                    _uiState.value = if (result.isEmpty) {
                         HomeUiState.Empty
                     } else {
                         HomeUiState.Success(
-                            recipes = allRecipes.toList(),
-                            hasMorePages = !isLastPage
+                            recipes = result.items,
+                            hasMorePages = !result.isLastPage
                         )
                     }
                 }
 
-                is RecipeResult.Error -> {
+                is PaginationResult.Error -> {
                     _uiState.value = HomeUiState.Error(result.message)
                 }
             }
@@ -67,27 +62,20 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = currentState.copy(isRefreshing = true)
             }
 
-            currentPage = 0
-            allRecipes.clear()
-
-            when (val result = recipeRepository.getPublicRecipes(currentPage, pageSize)) {
-                is RecipeResult.Success -> {
-                    val paginatedData = result.data
-                    allRecipes.addAll(paginatedData.recipes)
-                    isLastPage = paginatedData.isLastPage
-
-                    _uiState.value = if (paginatedData.recipes.isEmpty()) {
+            when (val result = paginationManager.loadFirstPage { it.recipes }) {
+                is PaginationResult.Success -> {
+                    _uiState.value = if (result.isEmpty) {
                         HomeUiState.Empty
                     } else {
                         HomeUiState.Success(
-                            recipes = allRecipes.toList(),
+                            recipes = result.items,
                             isRefreshing = false,
-                            hasMorePages = !isLastPage
+                            hasMorePages = !result.isLastPage
                         )
                     }
                 }
 
-                is RecipeResult.Error -> {
+                is PaginationResult.Error -> {
                     _uiState.value = HomeUiState.Error(result.message)
                 }
             }
@@ -96,7 +84,6 @@ class HomeViewModel @Inject constructor(
 
     fun loadMoreRecipes() {
         val currentState = _uiState.value
-
         // Only load more if we're in Success state and not already loading
         if (currentState !is HomeUiState.Success) return
         if (currentState.isLoadingMore || !currentState.hasMorePages) return
@@ -105,24 +92,21 @@ class HomeViewModel @Inject constructor(
             // Show loading more indicator
             _uiState.value = currentState.copy(isLoadingMore = true)
 
-            currentPage++
-
-            when (val result = recipeRepository.getPublicRecipes(currentPage, pageSize)) {
-                is RecipeResult.Success -> {
-                    val paginatedData = result.data
-                    allRecipes.addAll(paginatedData.recipes)
-                    isLastPage = paginatedData.isLastPage
-
+            when (val result = paginationManager.loadNextPage { it.recipes }) {
+                is PaginationResult.Success -> {
                     _uiState.value = HomeUiState.Success(
-                        recipes = allRecipes.toList(),
+                        recipes = result.items,
                         isLoadingMore = false,
-                        hasMorePages = !isLastPage
+                        hasMorePages = !result.isLastPage
                     )
                 }
-                is RecipeResult.Error -> {
+                is PaginationResult.Error -> {
                     // On pagination error, just stop loading more (don't show error screen)
-                    currentPage-- // Revert page increment
                     _uiState.value = currentState.copy(isLoadingMore = false)
+                }
+                null -> {
+                    // No more pages
+                    _uiState.value = currentState.copy(isLoadingMore = false, hasMorePages = false)
                 }
             }
         }

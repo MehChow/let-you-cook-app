@@ -32,7 +32,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -51,7 +50,7 @@ fun RecipeCardItem(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = Color.DarkGray
         )
     ) {
         Column {
@@ -119,11 +118,12 @@ fun RecipeCardItem(
             Column(
                 modifier = Modifier.padding(12.dp)
             ) {
-                // Title
+                // Title - Fixed to 2 lines for consistent card height
                 Text(
                     text = recipe.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    minLines = 2,  // Always reserve space for 2 lines
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface
@@ -185,21 +185,4 @@ private fun formatLikeCount(count: Int): String {
         count >= 1_000 -> String.format("%.1fK", count / 1_000.0)
         else -> count.toString()
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun RecipeCardItemPreview() {
-    RecipeCardItem(
-        recipe = RecipeCard(
-            id = 1,
-            title = "Apple pie",
-            coverImageUrl = null,
-            likeCount = 2223,
-            creatorId = 1,
-            creatorUsername = "Meh Chow",
-            creatorAvatarUrl = null
-        ),
-        onClick = {}
-    )
 }

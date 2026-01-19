@@ -21,7 +21,8 @@ data class PaginatedRecipes(
     val recipes: List<RecipeCard>,
     val isLastPage: Boolean,
     val totalPages: Int,
-    val currentPage: Int
+    val currentPage: Int,
+    val totalElements: Long,
 )
 
 interface RecipeRepository {
@@ -134,7 +135,8 @@ class RecipeRepositoryImpl @Inject constructor(
             recipes = this.content,
             isLastPage = this.page.isLastPage,
             totalPages = this.page.totalPages,
-            currentPage = this.page.number
+            currentPage = this.page.number,
+            totalElements = this.page.totalElements,
         )
     }
 
