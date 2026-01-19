@@ -3,6 +3,7 @@ package com.mehchow.letyoucook.data.repository
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import com.mehchow.letyoucook.data.model.FileInfo
 import com.mehchow.letyoucook.data.model.PresignedUrlBatchRequest
 import com.mehchow.letyoucook.data.model.PresignedUrlResponse
@@ -14,6 +15,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -90,6 +92,14 @@ class UploadRepositoryImpl @Inject constructor(
         }
     }
 
+    // Plain OkHttpClient for R2 uploads - no auth interceptor, with logging
+    private val r2Client = OkHttpClient.Builder()
+        .addInterceptor(HttpLoggingInterceptor { message ->
+            Log.d("R2_UPLOAD", message)
+        }.apply {
+            level = HttpLoggingInterceptor.Level.HEADERS
+        })
+        .build()
     private suspend fun uploadToR2(
         uri: Uri,
         presignedUrl: PresignedUrlResponse,
@@ -97,24 +107,43 @@ class UploadRepositoryImpl @Inject constructor(
     ): Boolean {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d("R2_UPLOAD", "Starting upload for URI: $uri")
+                
                 // Read image bytes from the content URI
                 val inputStream = context.contentResolver.openInputStream(uri)
-                    ?: return@withContext false
+                    ?: run {
+                        Log.e("R2_UPLOAD", "Failed to open input stream for URI: $uri")
+                        return@withContext false
+                    }
                 val bytes = inputStream.readBytes()
                 inputStream.close()
+                
+                Log.d("R2_UPLOAD", "Read ${bytes.size} bytes, uploading to R2...")
 
                 // Create PUT request to R2
+                // Note: Only send Content-Type header (must match what was signed)
+                // Don't send any extra headers like Authorization or x-amz-content-sha256
                 val requestBody = bytes.toRequestBody(contentType.toMediaType())
                 val request = Request.Builder()
                     .url(presignedUrl.uploadUrl)
                     .put(requestBody)
-                    .header(("Content-Type"), contentType)
+                    .header("Content-Type", contentType)
                     .build()
 
                 // Execute the request
-                val response = okHttpClient.newCall(request).execute()
-                response.isSuccessful
+                val response = r2Client.newCall(request).execute()
+                val success = response.isSuccessful
+                
+                if (!success) {
+                    val errorBody = response.body?.string()
+                    Log.e("R2_UPLOAD", "Upload failed: ${response.code} - $errorBody")
+                } else {
+                    Log.d("R2_UPLOAD", "Upload successful!")
+                }
+                
+                success
             } catch (e: Exception) {
+                Log.e("R2_UPLOAD", "Upload exception: ${e.message}", e)
                 false
             }
         }

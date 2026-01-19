@@ -14,10 +14,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.mehchow.letyoucook.NavRoutes.homeRoute
 import com.mehchow.letyoucook.ui.screens.AuthScreen
-import com.mehchow.letyoucook.ui.screens.HomeScreen
-import com.mehchow.letyoucook.ui.screens.ProfileScreen
+import com.mehchow.letyoucook.ui.screens.CreateRecipeScreen
+import com.mehchow.letyoucook.ui.screens.MainScreen
 import com.mehchow.letyoucook.ui.screens.RecipeDetailScreen
 import com.mehchow.letyoucook.ui.screens.SplashScreen
 import com.mehchow.letyoucook.ui.theme.LetYouCookTheme
@@ -46,9 +45,9 @@ fun AppNavigation(
     val navController = rememberNavController()
 
     LaunchedEffect(authState) {
-        when (val state = authState) {
+        when (authState) {
             is AuthState.Authenticated -> {
-                navController.navigate(homeRoute(state.user.username)) {
+                navController.navigate(NavRoutes.MAIN) {
                     popUpTo(NavRoutes.SPLASH) { inclusive = true }
                 }
             }
@@ -72,30 +71,32 @@ fun AppNavigation(
         }
 
         composable(NavRoutes.AUTH) {
-            AuthScreen(onLoginSuccess = { response ->
-                navController.navigate(homeRoute(response.username)) {
+            AuthScreen(onLoginSuccess = {
+                navController.navigate(NavRoutes.MAIN) {
                     popUpTo(NavRoutes.AUTH) { inclusive = true }
                 }
             })
         }
 
-        composable(
-            NavRoutes.HOME_WITH_USERNAME,
-            arguments = listOf(
-                navArgument("username") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val username = backStackEntry.arguments?.getString("username") ?: "User"
-            HomeScreen(
-                username = username,
+        // Main screen with bottom navigation (Home, Explore, Notification, Profile)
+        composable(NavRoutes.MAIN) { backStackEntry ->
+            // Observe the savedStateHandle for recipe_created result
+            val recipeCreated = backStackEntry.savedStateHandle.get<Boolean>("recipe_created") ?: false
+            
+            MainScreen(
                 onRecipeClick = { recipeId ->
                     navController.navigate(NavRoutes.recipeDetailRoute(recipeId))
                 },
                 onCreateRecipeClick = {
                     navController.navigate(NavRoutes.CREATE_RECIPE)
                 },
-                onProfileClick = {
-                    navController.navigate(NavRoutes.PROFILE)
+                onUserProfileClick = { userId ->
+                    navController.navigate(NavRoutes.userProfileRoute(userId))
+                },
+                shouldRefreshHome = recipeCreated,
+                onRefreshConsumed = {
+                    // Clear the flag after consuming
+                    backStackEntry.savedStateHandle.remove<Boolean>("recipe_created")
                 }
             )
         }
@@ -115,18 +116,14 @@ fun AppNavigation(
             )
         }
 
-        // Create recipe screen - placeholder for now
+        // Create recipe screen
         composable(NavRoutes.CREATE_RECIPE) {
-            // TODO: CreateRecipeScreen
-            Text("Create Recipe")
-        }
-
-        // Profile screen - placeholder for now
-        composable(NavRoutes.PROFILE) {
-            ProfileScreen(
+            CreateRecipeScreen(
                 onBackClick = { navController.popBackStack() },
-                onRecipeClick = { recipeId ->
-                    navController.navigate(NavRoutes.recipeDetailRoute(recipeId))
+                onSuccess = {
+                    // Set result to trigger refresh on MainScreen
+                    navController.previousBackStackEntry?.savedStateHandle?.set("recipe_created", true)
+                    navController.popBackStack()
                 }
             )
         }

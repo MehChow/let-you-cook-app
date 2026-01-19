@@ -8,9 +8,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -22,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -32,61 +31,50 @@ import com.mehchow.letyoucook.ui.theme.color_primary
 import com.mehchow.letyoucook.ui.viewmodel.HomeUiState
 import com.mehchow.letyoucook.ui.viewmodel.HomeViewModel
 
+/**
+ * Home tab content - displayed inside the MainScreen's bottom navigation.
+ * Shows the recipe feed with transparent top bar and hamburger menu.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    username: String,
+fun HomeTabContent(
     onRecipeClick: (Long) -> Unit,
-    onCreateRecipeClick: () -> Unit,
-    onProfileClick: () -> Unit,
+    onMenuClick: () -> Unit = {}, // For future drawer expansion
+    shouldRefresh: Boolean = false,
+    onRefreshConsumed: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    // Trigger refresh when shouldRefresh becomes true (e.g., after creating a recipe)
+    LaunchedEffect(shouldRefresh) {
+        if (shouldRefresh) {
+            viewModel.refreshRecipes()
+            onRefreshConsumed()
+        }
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
                     Text(
                         text = "Let You Cook",
                         fontWeight = FontWeight.Bold
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                actions = {
-                    // Profile button
-                    IconButton(onClick = onProfileClick) {
+                navigationIcon = {
+                    IconButton(onClick = onMenuClick) {
                         Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile"
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Menu"
                         )
                     }
-                    // Logout button
-                    IconButton(onClick = { viewModel.onLogoutClick() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Logout"
-                        )
-                    }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
-        },
-        floatingActionButton = {
-            // Only show FAB when in success state
-            if (uiState is HomeUiState.Success || uiState is HomeUiState.Empty) {
-                FloatingActionButton(
-                    onClick = onCreateRecipeClick,
-                    containerColor = MaterialTheme.colorScheme.primary
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Create Recipe"
-                    )
-                }
-            }
         }
     ) { paddingValues ->
         Box(

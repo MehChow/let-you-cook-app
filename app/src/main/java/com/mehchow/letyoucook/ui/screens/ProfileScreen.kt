@@ -19,11 +19,12 @@ import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -32,7 +33,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -55,37 +56,47 @@ import com.mehchow.letyoucook.ui.components.RecipeCardItem
 import com.mehchow.letyoucook.ui.viewmodel.ProfileUiState
 import com.mehchow.letyoucook.ui.viewmodel.ProfileViewModel
 
+/**
+ * Profile tab content - displayed inside the MainScreen's bottom navigation.
+ * Shows the current user's profile with transparent top bar, hamburger menu, and logout.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(
-    onBackClick: () -> Unit,
+fun ProfileTabContent(
     onRecipeClick: (Long) -> Unit,
+    onUserProfileClick: (Long) -> Unit = {},
+    onMenuClick: () -> Unit = {}, // For future drawer expansion
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Profile") },
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Profile",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = onMenuClick) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Menu"
                         )
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.logout() }) {
                         Icon(
-                            imageVector = Icons.Filled.LocationOn,
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Logout"
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.Transparent
                 )
             )
         }
@@ -97,10 +108,10 @@ fun ProfileScreen(
         ) {
             when (val state = uiState) {
                 is ProfileUiState.Loading -> {
-                    LoadingContent()
+                    ProfileLoadingContent()
                 }
                 is ProfileUiState.Success -> {
-                    ProfileContent(
+                    ProfileSuccessContent(
                         state = state,
                         onRecipeClick = onRecipeClick,
                         onRefresh = { viewModel.refreshProfile() },
@@ -108,7 +119,7 @@ fun ProfileScreen(
                     )
                 }
                 is ProfileUiState.Error -> {
-                    ErrorContent(
+                    ProfileErrorContent(
                         message = state.message,
                         onRetry = { viewModel.loadProfile() }
                     )
@@ -119,7 +130,7 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun LoadingContent() {
+private fun ProfileLoadingContent() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -130,7 +141,7 @@ private fun LoadingContent() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ProfileContent(
+private fun ProfileSuccessContent(
     state: ProfileUiState.Success,
     onRecipeClick: (Long) -> Unit,
     onRefresh: () -> Unit,
@@ -357,7 +368,7 @@ private fun EmptyRecipesContent() {
 }
 
 @Composable
-private fun ErrorContent(
+private fun ProfileErrorContent(
     message: String,
     onRetry: () -> Unit
 ) {
