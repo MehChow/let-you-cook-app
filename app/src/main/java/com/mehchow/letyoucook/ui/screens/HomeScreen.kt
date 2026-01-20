@@ -49,10 +49,11 @@ fun HomeTabContent(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
-    // Trigger refresh when shouldRefresh becomes true (e.g., after creating a recipe)
+    // Trigger silent refresh when shouldRefresh becomes true (e.g., after creating a recipe)
+    // Using silent refresh so user doesn't see the pull-to-refresh indicator
     LaunchedEffect(shouldRefresh) {
         if (shouldRefresh) {
-            viewModel.refreshRecipes()
+            viewModel.refreshRecipes(showIndicator = false)
             onRefreshConsumed()
         }
     }

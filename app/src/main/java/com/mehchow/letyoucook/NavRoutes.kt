@@ -16,6 +16,7 @@ object NavRoutes {
     const val RECIPE_DETAIL = "recipe/{recipeId}"
     const val CREATE_RECIPE = "recipe/create"
     const val EDIT_RECIPE = "recipe/edit/{recipeId}"
+    const val RECIPE_CREATED = "recipe/created"  // Success screen after creation
 
     // ================== USER ROUTES ==================
     const val USER_PROFILE = "user/{userId}"

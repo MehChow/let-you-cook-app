@@ -9,9 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -22,6 +19,7 @@ import com.mehchow.letyoucook.ui.screens.AuthScreen
 import com.mehchow.letyoucook.ui.screens.CreateRecipeScreen
 import com.mehchow.letyoucook.ui.screens.EditRecipeScreen
 import com.mehchow.letyoucook.ui.screens.MainScreen
+import com.mehchow.letyoucook.ui.screens.RecipeCreatedScreen
 import com.mehchow.letyoucook.ui.screens.RecipeDetailScreen
 import com.mehchow.letyoucook.ui.screens.SplashScreen
 import com.mehchow.letyoucook.ui.theme.LetYouCookTheme
@@ -35,17 +33,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // Track whether user has manually set a theme preference
-            // null = follow system, true = dark, false = light
-            var userThemePreference by rememberSaveable { mutableStateOf<Boolean?>(null) }
+            // Use ViewModel to get persisted theme preference
+            val viewModel: MainViewModel = hiltViewModel()
+            val themePreference by viewModel.isDarkTheme.collectAsState()
             
             val systemDarkTheme = isSystemInDarkTheme()
-            val isDarkTheme = userThemePreference ?: systemDarkTheme
+            // null = follow system, otherwise use the saved preference
+            val isDarkTheme = themePreference ?: systemDarkTheme
             
             LetYouCookTheme(darkTheme = isDarkTheme) {
                 AppNavigation(
                     isDarkTheme = isDarkTheme,
-                    onToggleTheme = { userThemePreference = !isDarkTheme }
+                    onToggleTheme = { viewModel.toggleTheme(isDarkTheme) }
                 )
             }
         }
@@ -159,8 +158,21 @@ fun AppNavigation(
             CreateRecipeScreen(
                 onBackClick = { navController.popBackStack() },
                 onSuccess = {
-                    // Set result to trigger refresh on MainScreen
-                    navController.previousBackStackEntry?.savedStateHandle?.set("recipe_created", true)
+                    // Set flag to trigger refresh on MainScreen when we get back there
+                    navController.getBackStackEntry(NavRoutes.MAIN).savedStateHandle.set("recipe_created", true)
+                    // Navigate to success screen, removing CREATE_RECIPE from back stack
+                    navController.navigate(NavRoutes.RECIPE_CREATED) {
+                        popUpTo(NavRoutes.CREATE_RECIPE) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Recipe created success screen (full screen with animation)
+        composable(NavRoutes.RECIPE_CREATED) {
+            RecipeCreatedScreen(
+                onNavigateToHome = {
+                    // Pop back to MAIN (the flag is already set)
                     navController.popBackStack()
                 }
             )

@@ -90,6 +90,9 @@ dependencies {
     // Extended Material Icons (for DarkMode/LightMode icons)
     implementation("androidx.compose.material:material-icons-extended")
 
+    // Lottie for Compose (animations)
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
+
 
     implementation("androidx.compose.ui:ui-text-google-fonts:1.3.2")
 

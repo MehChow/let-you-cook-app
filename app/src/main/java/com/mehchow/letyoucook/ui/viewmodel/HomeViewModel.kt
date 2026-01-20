@@ -55,10 +55,15 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun refreshRecipes() {
+    /**
+     * Refreshes the recipe list.
+     * @param showIndicator If true, shows the pull-to-refresh indicator. 
+     *                      Set to false for silent background refreshes.
+     */
+    fun refreshRecipes(showIndicator: Boolean = true) {
         viewModelScope.launch {
             val currentState = _uiState.value
-            if (currentState is HomeUiState.Success) {
+            if (currentState is HomeUiState.Success && showIndicator) {
                 _uiState.value = currentState.copy(isRefreshing = true)
             }
 
