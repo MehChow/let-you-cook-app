@@ -32,6 +32,16 @@ data class UploadedImage(
 
 interface UploadRepository {
     suspend fun uploadImages(imageUris: List<Uri>): UploadResult<List<UploadedImage>>
+    
+    /**
+     * Upload a single image to R2 using a presigned URL
+     * Used for avatar uploads where presigned URL is obtained separately
+     */
+    suspend fun uploadImageToR2(
+        uri: Uri,
+        presignedUrl: PresignedUrlResponse,
+        contentType: String
+    ): Boolean
 }
 
 @Singleton
@@ -100,6 +110,18 @@ class UploadRepositoryImpl @Inject constructor(
             level = HttpLoggingInterceptor.Level.HEADERS
         })
         .build()
+    
+    /**
+     * Public method to upload a single image to R2
+     */
+    override suspend fun uploadImageToR2(
+        uri: Uri,
+        presignedUrl: PresignedUrlResponse,
+        contentType: String
+    ): Boolean {
+        return uploadToR2(uri, presignedUrl, contentType)
+    }
+        
     private suspend fun uploadToR2(
         uri: Uri,
         presignedUrl: PresignedUrlResponse,

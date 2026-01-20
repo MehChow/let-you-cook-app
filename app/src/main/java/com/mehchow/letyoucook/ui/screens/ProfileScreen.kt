@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
@@ -68,12 +69,23 @@ import com.mehchow.letyoucook.ui.viewmodel.ProfileViewModel
 fun ProfileTabContent(
     onRecipeClick: (Long) -> Unit,
     onUserProfileClick: (Long) -> Unit = {},
+    onEditProfileClick: () -> Unit = {},
     onMenuClick: () -> Unit = {}, // For future drawer expansion
+    shouldRefresh: Boolean = false,
+    onRefreshConsumed: () -> Unit = {},
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // Trigger silent refresh when returning from edit profile
+    LaunchedEffect(shouldRefresh) {
+        if (shouldRefresh) {
+            viewModel.refreshProfile()
+            onRefreshConsumed()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -121,6 +133,7 @@ fun ProfileTabContent(
                         onRecipeClick = onRecipeClick,
                         onRefresh = { viewModel.refreshProfile() },
                         onLoadMore = { viewModel.loadMoreRecipes() },
+                        onEditProfile = onEditProfileClick,
                         onLogout = { viewModel.logout() }
                     )
                 }
@@ -152,6 +165,7 @@ private fun ProfileSuccessContent(
     onRecipeClick: (Long) -> Unit,
     onRefresh: () -> Unit,
     onLoadMore: () -> Unit,
+    onEditProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
     val gridState = rememberLazyStaggeredGridState()
@@ -192,6 +206,7 @@ private fun ProfileSuccessContent(
                 ProfileHeader(
                     profile = state.profile,
                     recipeCount = state.totalRecipes,
+                    onEditProfile = onEditProfile,
                     onLogout = onLogout
                 )
             }
@@ -254,6 +269,7 @@ private fun ProfileSuccessContent(
 private fun ProfileHeader(
     profile: UserProfile,
     recipeCount: Long,
+    onEditProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
     Column(
@@ -320,15 +336,31 @@ private fun ProfileHeader(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Logout button for easy testing
-        OutlinedButton(onClick = onLogout) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.size(8.dp))
-            Text("Logout")
+        // Action buttons row
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Edit Profile button
+            OutlinedButton(onClick = onEditProfile) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+                Text("Edit Profile")
+            }
+            
+            // Logout button
+            OutlinedButton(onClick = onLogout) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+                Text("Logout")
+            }
         }
     }
 }

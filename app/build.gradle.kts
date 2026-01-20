@@ -94,6 +94,7 @@ dependencies {
     implementation("com.airbnb.android:lottie-compose:6.4.0")
 
 
+
     implementation("androidx.compose.ui:ui-text-google-fonts:1.3.2")
 
     implementation(libs.androidx.core.ktx)

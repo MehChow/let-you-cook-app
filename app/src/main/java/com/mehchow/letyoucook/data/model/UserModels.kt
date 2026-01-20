@@ -18,3 +18,25 @@ data class UserProfile(
     @SerializedName("createdAt")
     val createdAt: String,
 )
+
+/**
+ * Request to update user profile
+ */
+data class UpdateProfileRequest(
+    @SerializedName("username")
+    val username: String,
+    
+    @SerializedName("avatarR2Key")
+    val avatarR2Key: String? = null
+)
+
+/**
+ * Request to get avatar upload presigned URL
+ */
+data class AvatarUploadRequest(
+    @SerializedName("fileName")
+    val fileName: String,
+    
+    @SerializedName("contentType")
+    val contentType: String
+)

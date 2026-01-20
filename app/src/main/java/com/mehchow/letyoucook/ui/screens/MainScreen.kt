@@ -1,6 +1,8 @@
 package com.mehchow.letyoucook.ui.screens
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -27,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 
 /**
  * Data class representing a bottom navigation tab item.
@@ -46,8 +49,11 @@ fun MainScreen(
     onRecipeClick: (Long) -> Unit,
     onCreateRecipeClick: () -> Unit,
     onUserProfileClick: (Long) -> Unit,
+    onEditProfileClick: () -> Unit = {},
     shouldRefreshHome: Boolean = false,
     onRefreshConsumed: () -> Unit = {},
+    shouldRefreshProfile: Boolean = false,
+    onProfileRefreshConsumed: () -> Unit = {},
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
@@ -101,11 +107,11 @@ fun MainScreen(
             }
         },
         floatingActionButton = {
-            // Show FAB on Home, Explore, and Profile tabs (not on Notification)
-            if (selectedTabIndex != 2) {
+            // Show FAB on Home
+            if (selectedTabIndex == 0) {
                 FloatingActionButton(
                     onClick = onCreateRecipeClick,
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -140,6 +146,9 @@ fun MainScreen(
                 3 -> ProfileTabContent(
                     onRecipeClick = onRecipeClick,
                     onUserProfileClick = onUserProfileClick,
+                    onEditProfileClick = onEditProfileClick,
+                    shouldRefresh = shouldRefreshProfile,
+                    onRefreshConsumed = onProfileRefreshConsumed,
                     isDarkTheme = isDarkTheme,
                     onToggleTheme = onToggleTheme
                 )

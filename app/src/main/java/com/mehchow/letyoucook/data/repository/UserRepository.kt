@@ -1,5 +1,8 @@
 package com.mehchow.letyoucook.data.repository
 
+import com.mehchow.letyoucook.data.model.AvatarUploadRequest
+import com.mehchow.letyoucook.data.model.PresignedUrlResponse
+import com.mehchow.letyoucook.data.model.UpdateProfileRequest
 import com.mehchow.letyoucook.data.model.UserProfile
 import com.mehchow.letyoucook.data.remote.UserApiService
 import retrofit2.HttpException
@@ -15,6 +18,8 @@ sealed class UserResult<out T> {
 
 interface UserRepository {
     suspend fun getCurrentUserProfile(): UserResult<UserProfile>
+    suspend fun updateProfile(request: UpdateProfileRequest): UserResult<UserProfile>
+    suspend fun getAvatarPresignedUrl(fileName: String, contentType: String): UserResult<PresignedUrlResponse>
 }
 
 @Singleton
@@ -26,12 +31,30 @@ class UserRepositoryImpl @Inject constructor(
             userApiService.getCurrentUserProfile()
         }
     }
+    
+    override suspend fun updateProfile(request: UpdateProfileRequest): UserResult<UserProfile> {
+        return safeApiCall {
+            userApiService.updateProfile(request)
+        }
+    }
+    
+    override suspend fun getAvatarPresignedUrl(
+        fileName: String, 
+        contentType: String
+    ): UserResult<PresignedUrlResponse> {
+        return safeApiCall {
+            userApiService.getAvatarPresignedUrl(
+                AvatarUploadRequest(fileName, contentType)
+            )
+        }
+    }
 
     private suspend fun <T> safeApiCall(block: suspend () -> T): UserResult<T> {
         return try {
             UserResult.Success(block())
         } catch (e: HttpException) {
             val errorMessage = when (e.code()) {
+                400 -> "Invalid request. Please check your input."
                 401 -> "Session expired. Please login again"
                 403 -> "Access denied"
                 404 -> "User not found"

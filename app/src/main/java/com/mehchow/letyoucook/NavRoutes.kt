@@ -20,6 +20,7 @@ object NavRoutes {
 
     // ================== USER ROUTES ==================
     const val USER_PROFILE = "user/{userId}"
+    const val EDIT_PROFILE = "profile/edit"  // Edit current user's profile
 
     // ==================  ROUTE BUILDERS ==================
     fun recipeDetailRoute(recipeId: Long): String = "recipe/$recipeId"

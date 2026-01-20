@@ -55,7 +55,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -355,14 +357,16 @@ private fun BasicInfoStep(
 @Composable
 private fun ImagesStep(
     images: List<SelectedImage>,
-    onAddImages: (List<Uri>) -> Unit,
+    onAddImages: (List<Uri>) -> String?,  // Returns error message if any
     onRemoveImage: (String) -> Unit
 ) {
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
     val multiplePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 10)
     ) { uris ->
         if (uris.isNotEmpty()) {
-            onAddImages(uris)
+            errorMessage = onAddImages(uris)
         }
     }
 
@@ -377,6 +381,22 @@ private fun ImagesStep(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            
+            Text(
+                text = "Max 10MB per image",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            // Show error message if any
+            errorMessage?.let { error ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
 
         item {

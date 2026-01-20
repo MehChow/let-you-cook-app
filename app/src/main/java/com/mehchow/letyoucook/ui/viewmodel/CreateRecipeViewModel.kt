@@ -1,5 +1,6 @@
 package com.mehchow.letyoucook.ui.viewmodel
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,7 @@ import com.mehchow.letyoucook.data.repository.RecipeResult
 import com.mehchow.letyoucook.data.repository.UploadRepository
 import com.mehchow.letyoucook.data.repository.UploadResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,7 +26,12 @@ import javax.inject.Inject
 class CreateRecipeViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val uploadRepository: UploadRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
+    
+    companion object {
+        const val MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024L  // 10MB
+    }
 
     private val _uiState = MutableStateFlow(CreateRecipeUiState())
     val uiState: StateFlow<CreateRecipeUiState> = _uiState.asStateFlow()
@@ -77,16 +84,48 @@ class CreateRecipeViewModel @Inject constructor(
     }
 
     // ==================== STEP 2: IMAGES ====================
-    fun addImages(uris: List<Uri>) {
-        _uiState.update { state ->
-            val currentImages = state.formData.images
-            val remainingSlots = 10 - currentImages.size
-            val newImages = uris.take(remainingSlots).map { uri ->
-                SelectedImage(uri = uri)
+    /**
+     * Add images with file size validation (max 10MB per image)
+     * Returns error message if any image exceeds the limit, null otherwise
+     */
+    fun addImages(uris: List<Uri>): String? {
+        val oversizedFiles = mutableListOf<String>()
+        val validUris = mutableListOf<Uri>()
+        
+        for (uri in uris) {
+            val fileSize = getFileSize(uri)
+            if (fileSize > MAX_FILE_SIZE_BYTES) {
+                oversizedFiles.add("${fileSize / (1024 * 1024)}MB")
+            } else {
+                validUris.add(uri)
             }
-            state.copy(
-                formData = state.formData.copy(images = currentImages + newImages)
-            )
+        }
+        
+        if (validUris.isNotEmpty()) {
+            _uiState.update { state ->
+                val currentImages = state.formData.images
+                val remainingSlots = 10 - currentImages.size
+                val newImages = validUris.take(remainingSlots).map { uri ->
+                    SelectedImage(uri = uri)
+                }
+                state.copy(
+                    formData = state.formData.copy(images = currentImages + newImages)
+                )
+            }
+        }
+        
+        return if (oversizedFiles.isNotEmpty()) {
+            "Some images exceed 10MB limit and were not added"
+        } else null
+    }
+    
+    private fun getFileSize(uri: Uri): Long {
+        return try {
+            context.contentResolver.openFileDescriptor(uri, "r")?.use {
+                it.statSize
+            } ?: 0L
+        } catch (e: Exception) {
+            0L
         }
     }
 

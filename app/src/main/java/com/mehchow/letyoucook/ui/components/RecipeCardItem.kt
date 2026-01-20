@@ -50,7 +50,7 @@ fun RecipeCardItem(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondary
+            containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
         Column {
@@ -118,15 +118,14 @@ fun RecipeCardItem(
             Column(
                 modifier = Modifier.padding(12.dp)
             ) {
-                // Title - Fixed to 2 lines for consistent card height
+                // Title
                 Text(
                     text = recipe.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    minLines = 2,  // Always reserve space for 2 lines
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSecondary
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -163,13 +162,12 @@ fun RecipeCardItem(
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
 
                     // Username
                     Text(
                         text = recipe.creatorUsername,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
