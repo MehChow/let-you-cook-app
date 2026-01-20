@@ -20,10 +20,13 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -66,6 +69,8 @@ fun ProfileTabContent(
     onRecipeClick: (Long) -> Unit,
     onUserProfileClick: (Long) -> Unit = {},
     onMenuClick: () -> Unit = {}, // For future drawer expansion
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -88,10 +93,10 @@ fun ProfileTabContent(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.logout() }) {
+                    IconButton(onClick = onToggleTheme) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Logout"
+                            imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = if (isDarkTheme) "Switch to light mode" else "Switch to dark mode"
                         )
                     }
                 },
@@ -115,7 +120,8 @@ fun ProfileTabContent(
                         state = state,
                         onRecipeClick = onRecipeClick,
                         onRefresh = { viewModel.refreshProfile() },
-                        onLoadMore = { viewModel.loadMoreRecipes() }
+                        onLoadMore = { viewModel.loadMoreRecipes() },
+                        onLogout = { viewModel.logout() }
                     )
                 }
                 is ProfileUiState.Error -> {
@@ -145,7 +151,8 @@ private fun ProfileSuccessContent(
     state: ProfileUiState.Success,
     onRecipeClick: (Long) -> Unit,
     onRefresh: () -> Unit,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
+    onLogout: () -> Unit
 ) {
     val gridState = rememberLazyStaggeredGridState()
 
@@ -184,7 +191,8 @@ private fun ProfileSuccessContent(
             item(span = StaggeredGridItemSpan.FullLine) {
                 ProfileHeader(
                     profile = state.profile,
-                    recipeCount = state.totalRecipes
+                    recipeCount = state.totalRecipes,
+                    onLogout = onLogout
                 )
             }
 
@@ -245,7 +253,8 @@ private fun ProfileSuccessContent(
 @Composable
 private fun ProfileHeader(
     profile: UserProfile,
-    recipeCount: Long
+    recipeCount: Long,
+    onLogout: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -307,6 +316,19 @@ private fun ProfileHeader(
                 count = recipeCount,
                 label = "Recipes"
             )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Logout button for easy testing
+        OutlinedButton(onClick = onLogout) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.size(8.dp))
+            Text("Logout")
         }
     }
 }

@@ -87,6 +87,12 @@ dependencies {
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    // Extended Material Icons (for DarkMode/LightMode icons)
+    implementation("androidx.compose.material:material-icons-extended")
+
+
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.3.2")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

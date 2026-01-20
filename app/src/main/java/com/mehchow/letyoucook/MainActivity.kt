@@ -3,11 +3,15 @@ package com.mehchow.letyoucook
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -31,8 +35,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            LetYouCookTheme {
-                AppNavigation()
+            // Track whether user has manually set a theme preference
+            // null = follow system, true = dark, false = light
+            var userThemePreference by rememberSaveable { mutableStateOf<Boolean?>(null) }
+            
+            val systemDarkTheme = isSystemInDarkTheme()
+            val isDarkTheme = userThemePreference ?: systemDarkTheme
+            
+            LetYouCookTheme(darkTheme = isDarkTheme) {
+                AppNavigation(
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = { userThemePreference = !isDarkTheme }
+                )
             }
         }
     }
@@ -40,6 +54,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation(
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val authState by viewModel.authState.collectAsState()
@@ -101,7 +117,9 @@ fun AppNavigation(
                     // Clear all flags after consuming
                     backStackEntry.savedStateHandle.remove<Boolean>("recipe_created")
                     backStackEntry.savedStateHandle.remove<Boolean>("recipe_modified")
-                }
+                },
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme
             )
         }
 

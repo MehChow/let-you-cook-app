@@ -47,7 +47,9 @@ fun MainScreen(
     onCreateRecipeClick: () -> Unit,
     onUserProfileClick: (Long) -> Unit,
     shouldRefreshHome: Boolean = false,
-    onRefreshConsumed: () -> Unit = {}
+    onRefreshConsumed: () -> Unit = {},
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {}
 ) {
     // Define the navigation items
     val navItems = listOf(
@@ -123,13 +125,23 @@ fun MainScreen(
                 0 -> HomeTabContent(
                     onRecipeClick = onRecipeClick,
                     shouldRefresh = shouldRefreshHome,
-                    onRefreshConsumed = onRefreshConsumed
+                    onRefreshConsumed = onRefreshConsumed,
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = onToggleTheme
                 )
-                1 -> ExploreScreen()
-                2 -> NotificationScreen()
+                1 -> ExploreScreen(
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = onToggleTheme
+                )
+                2 -> NotificationScreen(
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = onToggleTheme
+                )
                 3 -> ProfileTabContent(
                     onRecipeClick = onRecipeClick,
-                    onUserProfileClick = onUserProfileClick
+                    onUserProfileClick = onUserProfileClick,
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = onToggleTheme
                 )
             }
         }

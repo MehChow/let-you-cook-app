@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -27,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mehchow.letyoucook.ui.components.RecipeCardItem
-import com.mehchow.letyoucook.ui.theme.color_primary
 import com.mehchow.letyoucook.ui.viewmodel.HomeUiState
 import com.mehchow.letyoucook.ui.viewmodel.HomeViewModel
 
@@ -42,6 +43,8 @@ fun HomeTabContent(
     onMenuClick: () -> Unit = {}, // For future drawer expansion
     shouldRefresh: Boolean = false,
     onRefreshConsumed: () -> Unit = {},
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -71,6 +74,14 @@ fun HomeTabContent(
                         )
                     }
                 },
+                actions = {
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = if (isDarkTheme) "Switch to light mode" else "Switch to dark mode"
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color.Transparent
                 )
@@ -81,7 +92,7 @@ fun HomeTabContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(color = color_primary)
+                .background(color = MaterialTheme.colorScheme.surface)
         ) {
             when (val state = uiState) {
                 is HomeUiState.Loading -> {
@@ -284,7 +295,8 @@ private fun EmptyContent(
                 text = "No recipes yet",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(8.dp))

@@ -50,7 +50,7 @@ fun RecipeCardItem(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.DarkGray
+            containerColor = MaterialTheme.colorScheme.secondary
         )
     ) {
         Column {
@@ -126,7 +126,7 @@ fun RecipeCardItem(
                     minLines = 2,  // Always reserve space for 2 lines
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSecondary
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
