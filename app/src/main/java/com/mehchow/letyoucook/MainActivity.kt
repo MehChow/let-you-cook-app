@@ -2,7 +2,9 @@ package com.mehchow.letyoucook
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mehchow.letyoucook.ui.screens.AuthScreen
 import com.mehchow.letyoucook.ui.screens.CreateRecipeScreen
+import com.mehchow.letyoucook.ui.screens.EditProfileScreen
 import com.mehchow.letyoucook.ui.screens.EditRecipeScreen
 import com.mehchow.letyoucook.ui.screens.MainScreen
 import com.mehchow.letyoucook.ui.screens.RecipeCreatedScreen
@@ -32,6 +35,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
         setContent {
             // Use ViewModel to get persisted theme preference
             val viewModel: MainViewModel = hiltViewModel()
@@ -40,6 +44,30 @@ class MainActivity : ComponentActivity() {
             val systemDarkTheme = isSystemInDarkTheme()
             // null = follow system, otherwise use the saved preference
             val isDarkTheme = themePreference ?: systemDarkTheme
+            
+            // Update system bars when theme changes
+            LaunchedEffect(isDarkTheme) {
+                enableEdgeToEdge(
+                    statusBarStyle = if (isDarkTheme) {
+                        // Dark theme: light text on dark background
+                        SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    } else {
+                        // Light theme: dark text on light background
+                        SystemBarStyle.light(
+                            android.graphics.Color.TRANSPARENT,
+                            android.graphics.Color.TRANSPARENT
+                        )
+                    },
+                    navigationBarStyle = if (isDarkTheme) {
+                        SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    } else {
+                        SystemBarStyle.light(
+                            android.graphics.Color.TRANSPARENT,
+                            android.graphics.Color.TRANSPARENT
+                        )
+                    }
+                )
+            }
             
             LetYouCookTheme(darkTheme = isDarkTheme) {
                 AppNavigation(
@@ -99,7 +127,13 @@ fun AppNavigation(
             // Observe the savedStateHandle for recipe changes (created, edited, or deleted)
             val recipeCreated = backStackEntry.savedStateHandle.get<Boolean>("recipe_created") ?: false
             val recipeModified = backStackEntry.savedStateHandle.get<Boolean>("recipe_modified") ?: false
-            val shouldRefresh = recipeCreated || recipeModified
+            
+            // Observe for profile updates (separate flag for home refresh)
+            val profileUpdated = backStackEntry.savedStateHandle.get<Boolean>("profile_updated") ?: false
+            val profileUpdatedHome = backStackEntry.savedStateHandle.get<Boolean>("profile_updated_home") ?: false
+            
+            // Home should refresh on recipe changes OR profile updates (to update user info on recipe cards)
+            val shouldRefreshHome = recipeCreated || recipeModified || profileUpdatedHome
             
             MainScreen(
                 onRecipeClick = { recipeId ->
@@ -111,11 +145,19 @@ fun AppNavigation(
                 onUserProfileClick = { userId ->
                     navController.navigate(NavRoutes.userProfileRoute(userId))
                 },
-                shouldRefreshHome = shouldRefresh,
+                onEditProfileClick = {
+                    navController.navigate(NavRoutes.EDIT_PROFILE)
+                },
+                shouldRefreshHome = shouldRefreshHome,
                 onRefreshConsumed = {
-                    // Clear all flags after consuming
+                    // Clear all home-related flags after consuming
                     backStackEntry.savedStateHandle.remove<Boolean>("recipe_created")
                     backStackEntry.savedStateHandle.remove<Boolean>("recipe_modified")
+                    backStackEntry.savedStateHandle.remove<Boolean>("profile_updated_home")
+                },
+                shouldRefreshProfile = profileUpdated,
+                onProfileRefreshConsumed = {
+                    backStackEntry.savedStateHandle.remove<Boolean>("profile_updated")
                 },
                 isDarkTheme = isDarkTheme,
                 onToggleTheme = onToggleTheme
@@ -192,6 +234,21 @@ fun AppNavigation(
                     navController.previousBackStackEntry?.savedStateHandle?.set("recipe_edited", true)
                     // Also notify MainScreen via the detail screen's back stack entry
                     navController.getBackStackEntry(NavRoutes.MAIN).savedStateHandle.set("recipe_modified", true)
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Edit profile screen
+        composable(NavRoutes.EDIT_PROFILE) {
+            EditProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = {
+                    // Set flags to refresh both profile and home when we go back
+                    // profile_updated - refreshes profile tab
+                    // profile_updated_home - refreshes home tab (to update user info on recipe cards)
+                    navController.previousBackStackEntry?.savedStateHandle?.set("profile_updated", true)
+                    navController.previousBackStackEntry?.savedStateHandle?.set("profile_updated_home", true)
                     navController.popBackStack()
                 }
             )
