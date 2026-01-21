@@ -72,8 +72,20 @@ class EditProfileViewModel @Inject constructor(
             return "Image size exceeds ${maxMb}MB limit"
         }
         
-        // Validate mime type
-        val mimeType = context.contentResolver.getType(uri)
+        // Validate mime type - try ContentResolver first, then fallback to file extension for file:// URIs
+        var mimeType = context.contentResolver.getType(uri)
+
+        // If ContentResolver fails (common with file:// URIs), check file extension
+        if (mimeType == null && uri.scheme == "file") {
+            val file = java.io.File(uri.path ?: "")
+            mimeType = when (file.extension.lowercase()) {
+                "jpg", "jpeg" -> "image/jpeg"
+                "png" -> "image/png"
+                "webp" -> "image/webp"
+                else -> null
+            }
+        }
+
         if (mimeType == null || mimeType.lowercase() !in ALLOWED_MIME_TYPES) {
             return "Invalid image format. Allowed: JPG, PNG, WebP"
         }
@@ -88,13 +100,28 @@ class EditProfileViewModel @Inject constructor(
         return null  // No error
     }
     
-    fun removeNewAvatar() {
-        updateReadyState { 
-            it.copy(
-                newAvatarUri = null, 
-                newAvatarR2Key = null,
-                errorMessage = null
-            ) 
+    fun removeAvatar() {
+        updateReadyState { state ->
+            when {
+                // If there's a new avatar, remove it
+                state.newAvatarUri != null -> {
+                    state.copy(
+                        newAvatarUri = null,
+                        newAvatarR2Key = null,
+                        removeCurrentAvatar = false,  // Don't remove current if we were replacing it
+                        errorMessage = null
+                    )
+                }
+                // If there's a current avatar, mark it for removal
+                state.currentAvatarUrl != null -> {
+                    state.copy(
+                        removeCurrentAvatar = true,
+                        errorMessage = null
+                    )
+                }
+                // Nothing to remove
+                else -> state
+            }
         }
     }
     
@@ -111,10 +138,13 @@ class EditProfileViewModel @Inject constructor(
         if (!currentState.canSave) return
         
         viewModelScope.launch {
-            // If there's a new avatar, upload it first
+            // Determine the avatar R2 key to use
             var avatarR2Key: String? = null
-            
-            if (currentState.newAvatarUri != null && currentState.newAvatarR2Key == null) {
+
+            if (currentState.removeCurrentAvatar) {
+                // Remove current avatar by setting empty string
+                avatarR2Key = ""
+            } else if (currentState.newAvatarUri != null && currentState.newAvatarR2Key == null) {
                 updateReadyState { it.copy(isUploading = true, errorMessage = null) }
                 
                 val uploadResult = uploadAvatar(currentState.newAvatarUri)
@@ -146,11 +176,12 @@ class EditProfileViewModel @Inject constructor(
                     originalUsername = result.data.username
                     updateReadyState { 
                         it.copy(
-                            isSaving = false, 
+                            isSaving = false,
                             saveSuccess = true,
                             currentAvatarUrl = result.data.avatarUrl,
                             newAvatarUri = null,
-                            newAvatarR2Key = null
+                            newAvatarR2Key = null,
+                            removeCurrentAvatar = false
                         ) 
                     }
                 }
